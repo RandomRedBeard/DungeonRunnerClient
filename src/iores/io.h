@@ -12,6 +12,7 @@
 #include <WinSock2.h>
 #include <Windows.h>
 #else
+#include <sys/socket.h>
 #include <unistd.h>
 #endif
 #include <stdio.h>

@@ -12,10 +12,16 @@
 #include <WinSock2.h>
 #include <WS2tcpip.h>
 #else
+#include <arpa/inet.h>
 #include <sys/socket.h>
+#include <sys/types.h>
+#include <netdb.h>
+#include <unistd.h>
 #endif
 #include <stdio.h>
+#include <stdlib.h>
 #include <string>
+#include <string.h>
 #include <vector>
 
 #include "io.h"

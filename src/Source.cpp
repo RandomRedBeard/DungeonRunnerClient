@@ -4,6 +4,10 @@
 #include <queue>
 #include <vector>
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <cstdio>
+
 #include <curses.h>
 
 #include "globals.h"
@@ -155,7 +159,12 @@ int main(int argc , char** argv ) {
 		handle = (char*)malloc(17);
 		memset(handle, 0, 17);
 		printf("Enter Handle: ");
+#ifdef _WIN32
 		gets_s(handle, 16);
+#else
+		//gets(handle);
+		return -1;
+#endif
 	}
 
 #ifdef _WIN32
@@ -196,7 +205,7 @@ int main(int argc , char** argv ) {
 	char buffer[STD_LEN];
 
 	int x, y;
-	
+
 	while (true) {
 		x = y = 0;
 		int n = getInput(mapWin);
@@ -332,14 +341,15 @@ void messageThread() {
 
 		if (curx == messageWin->_maxy) {
 			curx--;
-			mvwdeleteln(messageWin, 0, 0);
+			wmove(messageWin, 0, 0);
+			wdeleteln(messageWin);
+			//mvwdeleteln(messageWin, 0, 0);
 		}
 
 		buffer = messageQueue.front();
 		messageQueue.pop();
 		mvwaddstr(messageWin, curx++, 0, buffer);
 		free(buffer);
-		
 		if (REFRESH) {
 			wrefresh(messageWin);
 			wrefresh(mapWin);
