@@ -207,7 +207,7 @@ int main(int argc , char** argv ) {
 	raw();
 	keypad(mapWin, true);
 	initMap();
-	std::thread message(&messageThread);
+	//std::thread message(&messageThread);
 	std::thread reader(&readerThread, &fd);
 
 	char buffer[STD_LEN];
@@ -234,7 +234,7 @@ int main(int argc , char** argv ) {
 			fd.closeSocket();
 			STATE = -1;
 			messageCond.notify_all();
-			message.join();
+			//message.join();
 			reader.join();
 			refresh();
 			endwin();
@@ -1306,7 +1306,7 @@ int showEquip(Socket* fd ) {
 	
 	multiplayerLock.lock();
 
-	item* it = me->getItem(strtol(buffer,nullptr,0));
+	item* it = me->getItem(n);
 	if (it && dynamic_cast<armor*>(it)) {
 		snprintf(buffer, STD_LEN, "%s%c%s%c%s%c", EQUIP_OP, OP_SEP, it->getId(), OP_SEP, BODY_OP, OP_SEP);
 		fd->write(buffer, strlen(buffer));
