@@ -170,8 +170,9 @@ int main(int argc , char** argv ) {
 #ifdef _WIN32
 		gets_s(handle, 16);
 #else
-		//gets(handle);
-		return -1;
+		fgets(handle, 16, stdin);
+		*(handle + strlen(handle) - 1) = '\0';
+		//return -1;
 #endif
 	}
 
@@ -466,21 +467,21 @@ int acceptTravel(Socket* fd) {
 
 	me->setPt(point(pt));
 
-	/*monster* m;
+	monster* m;
 	while (monsters.size() != 0) {
 		m = monsters.front();
 		monsters.erase(monsters.begin());
-		//delete(m);
+		delete(m);
 	}
 
 	item* it;
 	while (items.size() != 0) {
 		it = items.front();
 		items.erase(items.begin());
-		//delete(it);
-	}*/
+		delete(it);
+	}
 
-	for ( monster* m : monsters ) {
+	/*for ( monster* m : monsters ) {
 		delete m;
 	}
 
@@ -490,7 +491,7 @@ int acceptTravel(Socket* fd) {
 		delete it;
 	}
 
-	items.clear();
+	items.clear();*/
 
 	player* p;
 	while (players.size() != 0) {
