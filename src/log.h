@@ -17,8 +17,6 @@
 
 #include "globals.h"
 
-int initLog();
-
 int loginfo(std::string, ...);
 
 int logerr(std::string, ...);

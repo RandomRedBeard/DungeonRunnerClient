@@ -13,7 +13,10 @@
 #include "monsterres/monster.h"
 #include "player.h"
 
+#ifdef _WIN32
 #pragma comment(lib,"Ws2_32.lib")
+#endif
+
 #pragma comment(lib,"pdcurses.lib")
 
 #define PORT_ARG 'p'
@@ -22,16 +25,21 @@
 #define HEIGHT_ARG 'H'
 #define WIDTH_ARG 'W'
 
-#define ARGSTRING "p:a:h:"
+#define ARGSTRING "p:a:h:H:W:"
 
 int STATE;
 
 bool REFRESH;
 
-const int INP_UP = 'w';
-const int INP_DOWN = 's';
-const int INP_LEFT = 'a';
-const int INP_RIGHT = 'd';
+int INP_UP = 'w';
+int INP_DOWN = 's';
+int INP_LEFT = 'a';
+int INP_RIGHT = 'd';
+int INP_QUIT = 'q';
+int INP_PICKUP = ' ';
+int INP_SHOW_INVENTORY = 'i';
+int INP_EQUIP = 'e';
+int INP_TRAVEL = 't';
 
 int POLL_WAIT_TIMEOUT = -1;
 unsigned int MIN_NUMBER_ARROWS = 1;
@@ -152,6 +160,7 @@ int main(int argc , char** argv ) {
 	}
 
 	if (!handle) {
+		printf("%d %d\n", HEIGHT, WIDTH);
 		handle = (char*)malloc(17);
 		memset(handle, 0, 17);
 		printf("Enter Handle: ");
@@ -201,20 +210,19 @@ int main(int argc , char** argv ) {
 		x = y = 0;
 		int n = getInput(mapWin);
 
-		switch (n) {
-		case INP_UP:
-			x--;
-			break;
-		case INP_DOWN:
-			x++;
-			break;
-		case INP_LEFT:
-			y--;
-			break;
-		case INP_RIGHT:
-			y++;
-			break;
-		case 'q':
+		if (n == INP_UP) {
+			x = -1;
+		}
+		else if (n == INP_DOWN) {
+			x = 1;
+		}
+		else if (n == INP_LEFT) {
+			y = -1;
+		}
+		else if (n == INP_RIGHT) {
+			y = 1;
+		}
+		else if (n == INP_QUIT) {
 			fd.closeSocket();
 			STATE = -1;
 			messageCond.notify_all();
@@ -226,22 +234,20 @@ int main(int argc , char** argv ) {
 			printf("Press any key to exit...");
 			getchar();
 			return 0;
-		}
-
-		if (n == ' ') {
+		}else if (n == INP_PICKUP) {
 			snprintf(buffer, STD_LEN, "%s%c", PICKUP_OP, OP_SEP);
 			fd.write(buffer, strlen(buffer));
 			continue;
 		}
-		else if (n == 'i') {
+		else if (n == INP_SHOW_INVENTORY) {
 			showInventory();
 			continue;
 		}
-		else if (n == 'e') {
+		else if (n == INP_EQUIP) {
 			showEquip(&fd);
 			continue;
 		}
-		else if (n == 't') {
+		else if (n == INP_TRAVEL) {
 			snprintf(buffer, STD_LEN, "%s%c", TRAVEL_REQUEST_OP, OP_SEP);
 			fd.write(buffer, strlen(buffer));
 			continue;
@@ -826,6 +832,8 @@ int newPlayer(Socket* fd) {
 	screenLock.unlock();
 
 	multiplayerLock.unlock();
+
+	return 0;
 }
 
 int move(Socket* fd) {
@@ -1138,7 +1146,7 @@ int playerKilledMonster(Socket* fd, const char* att_id, const char* vic_id) {
 		addMessage("You have killed %s", vic_id);
 	}
 
-	for (int i = 0; i < monsters.size(); i++) {
+	for (unsigned int i = 0; i < monsters.size(); i++) {
 		if (monsters[i] == m) {
 			monsters.erase(monsters.begin() + i);
 			break;
@@ -1163,6 +1171,8 @@ int playerKilledMonster(Socket* fd, const char* att_id, const char* vic_id) {
 	delete(m);
 
 	multiplayerLock.unlock();
+
+	return 0;
 }
 
 int monsterKilledPlayer(const char* att_id, const char* vic_id) {
@@ -1203,6 +1213,8 @@ int level(Socket* fd) {
 	screenLock.unlock();
 
 	multiplayerLock.unlock();
+
+	return 0;
 }
 
 int showInventory() {
@@ -1214,8 +1226,6 @@ int showInventory() {
 	me->sprintInventory(buffer, 1023);
 
 	multiplayerLock.unlock();
-
-
 
 	screenLock.lock();
 	REFRESH = false;
@@ -1271,11 +1281,11 @@ int showEquip(Socket* fd ) {
 
 	screenLock.unlock();
 	
-	int n = getInput(inventoryWin) -'0';
+	int n = wgetch(inventoryWin) - '0';
 	
 	multiplayerLock.lock();
 
-	item* it = me->getItem(n);
+	item* it = me->getItem(strtol(buffer,nullptr,0));
 	if (it && dynamic_cast<armor*>(it)) {
 		snprintf(buffer, STD_LEN, "%s%c%s%c%s%c", EQUIP_OP, OP_SEP, it->getId(), OP_SEP, BODY_OP, OP_SEP);
 		fd->write(buffer, strlen(buffer));
