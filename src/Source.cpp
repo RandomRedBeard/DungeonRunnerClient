@@ -228,9 +228,14 @@ int main(int argc , char** argv ) {
 	REFRESH = true;
 
 	initscr();
+	if (!has_mouse()) {
+		endwin();
+		return -1;
+	}
 	noecho();
-	raw();
+	cbreak();
 	keypad(mapWin, true);
+	mousemask(ALL_MOUSE_EVENTS, nullptr);
 	initMap();
 	std::thread message(&messageThread);
 	std::thread reader(&readerThread, &fd);
@@ -243,6 +248,12 @@ int main(int argc , char** argv ) {
 		x = y = 0;
 		int n = getInput(mapWin);
 
+		switch(n){
+		case KEY_MOUSE:
+			addMessage("Mouse");
+			break;
+		}
+
 		if (n == INP_UP) {
 			x = -1;
 		}
@@ -254,9 +265,6 @@ int main(int argc , char** argv ) {
 		}
 		else if (n == INP_RIGHT) {
 			y = 1;
-		}
-		else if (n == KEY_MOUSE) {
-			addMessage("Mouse");
 		}
 		else if (n == INP_QUIT) {
 			fd.shutdownSocket();
