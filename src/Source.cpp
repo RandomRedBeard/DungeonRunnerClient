@@ -42,6 +42,7 @@ int INP_PICKUP = ' ';
 int INP_SHOW_INVENTORY = 'i';
 int INP_EQUIP = 'e';
 int INP_UNEQUIP = 'u';
+int INP_DROP = 'D';
 int INP_TRAVEL = 't';
 
 int POLL_WAIT_TIMEOUT = -1;
@@ -95,22 +96,34 @@ item* findItem(const char*);
 item* findItem(point);
 
 int acceptTravel(Socket*);
+
 int enterMap(Socket*);
+
 int newWeapon(Socket*);
 int newArmor(Socket*);
 int newBow(Socket*);
 int newArrow(Socket*);
 int newMonster(Socket*);
 int newPlayer(Socket*);
+
 int move(Socket*);
 int monsterMove(Socket*);
 int playerMove(Socket*);
+
 int pickup(Socket*);
 int equip(Socket*);
 int unequip(Socket*);
+
+int drop(Socket*);
+int dropWeapon(Socket*, const char*);
+int dropArmor(Socket*, const char*);
+int dropBow(Socket*, const char*);
+int dropArrow(Socket*, const char*);
+
 int melee(Socket*);
 int playerToMonsterMelee( const char* , const char* , int );
 int monsterToPlayerMelee(const char*, const char*,int);
+
 int killed(Socket*);
 int playerKilledMonster(Socket* fd , const char*, const char*);
 int monsterKilledPlayer(const char*, const char*);
@@ -120,6 +133,7 @@ int level(Socket*);
 int showInventory();
 int showEquip(Socket*);
 int showUnequip(Socket*);
+int showDrop(Socket*);
 
 int pmvwaddch(WINDOW* w, point pt, int c) {
 	return mvwaddch(w, pt.getX(), pt.getY(), c);
@@ -266,6 +280,9 @@ int main(int argc , char** argv ) {
 		else if (n == INP_UNEQUIP) {
 			showUnequip(&fd);
 		}
+		else if (n == INP_DROP) {
+			showDrop(&fd);
+		}
 		else if (n == INP_TRAVEL) {
 			snprintf(buffer, STD_LEN, "%s%c", TRAVEL_REQUEST_OP, OP_SEP);
 			fd.write(buffer, strlen(buffer));
@@ -397,6 +414,9 @@ void readerThread(Socket* fd) {
 		}
 		else if (strcmp(buffer, UNEQUIP_OP) == 0) {
 			unequip(fd);
+		}
+		else if (strcmp(buffer, DROP_OP) == 0) {
+			drop(fd);
 		}
 		else if (strcmp(buffer, MELEE_OP) == 0) {
 			melee(fd);
@@ -1087,6 +1107,252 @@ int unequip(Socket* fd) {
 	return 0;
 }
 
+int drop(Socket* fd) {
+	char p_name[STD_LEN], type[STD_LEN];
+
+	if (fd->read(p_name) < 0) {
+		return -1;
+	}
+
+	if (fd->read(type) < 0) {
+		return -1;
+	}
+
+	if (strcmp(type, WEAPON_OP) == 0) {
+		return dropWeapon(fd, p_name);
+	} else if (strcmp(type, ARMOR_OP) == 0) {
+		return dropArmor(fd, p_name);
+	} else if (strcmp(type, BOW_OP) == 0) {
+		return dropBow(fd, p_name);
+	} else if (strcmp(type, ARROW_OP) == 0) {
+		return dropArrow(fd, p_name);
+	}
+
+	return -1;
+}
+
+int dropWeapon(Socket* fd, const char* p_name) {
+	char id[STD_LEN], name[STD_LEN], pt[STD_LEN], lvl[STD_LEN], dmg[STD_LEN];
+
+	if (fd->read(id) < 0) {
+		return -1;
+	}
+
+	if (fd->read(name) < 0) {
+		return -1;
+	}
+
+	if (fd->read(pt) < 0) {
+		return -1;
+	}
+
+	if (fd->read(lvl) < 0) {
+		return -1;
+	}
+
+	if (fd->read(dmg) < 0) {
+		return -1;
+	}
+
+	multiplayerLock.lock();
+
+	player* p = findPlayer(p_name);
+	if (!p) {
+		multiplayerLock.unlock();
+		return -1;
+	}
+
+	item* it = p->drop(id);
+
+	if (!it) {
+		weapon* w = new weapon();
+		w->setName(name);
+		w->setPt(point(pt));
+		w->setLvl(strtol(lvl, nullptr, 0));
+		point dmgpt(dmg);
+		w->setMaxDmg(dmgpt.getX());
+		w->setMinDmg(dmgpt.getY());
+		it = w;
+	} else {
+		it->setPt(point(pt));
+	}
+
+	items.push_back(it);
+
+	multiplayerLock.unlock();
+
+	return 0;
+}
+
+int dropArmor(Socket* fd, const char* p_name) {
+	char id[STD_LEN], name[STD_LEN], pt[STD_LEN], lvl[STD_LEN], ac[STD_LEN];
+
+	if (fd->read(id) < 0) {
+		return -1;
+	}
+
+	if (fd->read(name) < 0) {
+		return -1;
+	}
+
+	if (fd->read(pt) < 0) {
+		return -1;
+	}
+
+	if (fd->read(lvl) < 0) {
+		return -1;
+	}
+
+	if (fd->read(ac) < 0) {
+		return -1;
+	}
+
+	multiplayerLock.lock();
+
+	player* p = findPlayer(p_name);
+	if (!p) {
+		multiplayerLock.unlock();
+		return -1;
+	}
+
+	item* it = p->drop(id);
+
+	if (!it) {
+		armor* ar = new armor();
+		ar->setName(name);
+		ar->setPt(p->getPt());
+		ar->setLvl(strtol(lvl, nullptr, 0));
+		ar->setAc(strtol(ac, nullptr, 0));
+		it = ar;
+	} else {
+		it->setPt(point(pt));
+	}
+
+	items.push_back(it);
+
+	multiplayerLock.unlock();
+	return 0;
+}
+
+int dropBow(Socket* fd, const char* p_name) {
+	char id[STD_LEN], name[STD_LEN], pt[STD_LEN], lvl[STD_LEN], dmg[STD_LEN], rdmg[STD_LEN];
+
+	if (fd->read(id) < 0) {
+		return -1;
+	}
+
+	if (fd->read(name) < 0) {
+		return -1;
+	}
+
+	if (fd->read(pt) < 0) {
+		return -1;
+	}
+
+	if (fd->read(lvl) < 0) {
+		return -1;
+	}
+
+	if (fd->read(dmg) < 0) {
+		return -1;
+	}
+
+	if (fd->read(rdmg) < 0) {
+		return -1;
+	}
+
+	multiplayerLock.lock();
+
+	player* p = findPlayer(p_name);
+	if (!p) {
+		multiplayerLock.unlock();
+		return -1;
+	}
+
+	item* it = p->drop(id);
+
+	if (!it) {
+		bow* b = new bow();
+		b->setId(id);
+		b->setName(name);
+		b->setPt(p->getPt());
+		b->setLvl(strtol(lvl, nullptr, 0));
+		point dmgpt(dmg);
+		point rdmgpt(rdmg);
+		b->setMaxDmg(dmgpt.getX());
+		b->setMinDmg(dmgpt.getY());
+		b->setRangeMaxDmg(rdmgpt.getX());
+		b->setRangeMinDmg(rdmgpt.getY());
+		it = b;
+	} else {
+		it->setPt(point(pt));
+	}
+
+	items.push_back(it);
+
+	multiplayerLock.unlock();
+
+	return 0;
+}
+
+int dropArrow(Socket* fd, const char* p_name) {
+	char id[STD_LEN], name[STD_LEN], pt[STD_LEN], lvl[STD_LEN], dmg[STD_LEN], narrows[STD_LEN];
+
+	if (fd->read(id) < 0) {
+		return -1;
+	}
+
+	if (fd->read(name) < 0) {
+		return -1;
+	}
+
+	if (fd->read(pt) < 0) {
+		return -1;
+	}
+
+	if (fd->read(lvl) < 0) {
+		return -1;
+	}
+
+	if (fd->read(dmg) < 0) {
+		return -1;
+	}
+
+	if (fd->read(narrows) < 0) {
+		return -1;
+	}
+
+	multiplayerLock.lock();
+
+	player* p = findPlayer(p_name);
+	if (!p) {
+		multiplayerLock.unlock();
+		return -1;
+	}
+
+	item* it = p->drop(id);
+
+	if (!it) {
+		arrow* ar = new arrow();
+		ar->setId(id);
+		ar->setName(name);
+		ar->setPt(p->getPt());
+		ar->setLvl(strtol(lvl, nullptr, 0));
+		point dmgpt(dmg);
+		ar->setMaxDmg(dmgpt.getX());
+		ar->setMinDmg(dmgpt.getY());
+		ar->setNumberArrows(strtol(narrows, nullptr, 0));
+		it = ar;
+	} else {
+		it->setPt(point(pt));
+	}
+
+	items.push_back(it);
+
+	multiplayerLock.unlock();
+	return 0;
+}
+
 int melee(Socket* fd) {
 	char att_type[STD_LEN], att_id[STD_LEN], vic_type[STD_LEN], vic_id[STD_LEN], dmg[STD_LEN];
 
@@ -1444,6 +1710,63 @@ int showUnequip(Socket* fd) {
 		snprintf(buffer, STD_LEN, "%s%c%s%c", UNEQUIP_OP, OP_SEP, BODY_OP, OP_SEP);
 		fd->write(buffer, strlen(buffer));
 	}
+
+	screenLock.lock();
+
+	REFRESH = true;
+
+	redrawwin(targetWin);
+	wrefresh(targetWin);
+
+	redrawwin(borderWin);
+	wrefresh(borderWin);
+
+	redrawwin(hudWin);
+	wrefresh(hudWin);
+
+	redrawwin(messageWin);
+	wrefresh(messageWin);
+
+	redrawwin(mapWin);
+	wrefresh(mapWin);
+
+	screenLock.unlock();
+
+	return 0;
+}
+
+int showDrop(Socket* fd) {
+	char buffer[1024];
+	memset(buffer, 0, 1024);
+	multiplayerLock.lock();
+
+	me->sprintInventory(buffer, 1023);
+
+	multiplayerLock.unlock();
+
+	screenLock.lock();
+	REFRESH = false;
+
+	wclear(inventoryWin);
+	mvwprintw(inventoryWin, 0, 0, "Inventory\n\n");
+	waddstr(inventoryWin, buffer);
+	wprintw(inventoryWin, "\nWhat would you like to drop?");
+	wrefresh(inventoryWin);
+
+	screenLock.unlock();
+
+	int n = wgetch(inventoryWin) - '0';
+
+	multiplayerLock.lock();
+
+	item* it = me->getItem(n);
+
+	if (it) {
+		snprintf(buffer, STD_LEN, "%s%c%s%c", DROP_OP, OP_SEP, it->getId(), OP_SEP);
+		fd->write(buffer, strlen(buffer));
+	}
+
+	multiplayerLock.unlock();
 
 	screenLock.lock();
 
