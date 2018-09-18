@@ -228,14 +228,16 @@ int main(int argc , char** argv ) {
 	REFRESH = true;
 
 	initscr();
+	noecho();
+	keypad(stdscr, true);
+	keypad(mapWin, true);
+	mousemask(ALL_MOUSE_EVENTS, nullptr);
+	mouseinterval(0);
 	if (!has_mouse()) {
 		endwin();
 		return -1;
 	}
-	noecho();
-	cbreak();
-	keypad(mapWin, true);
-	mousemask(ALL_MOUSE_EVENTS, nullptr);
+
 	initMap();
 	std::thread message(&messageThread);
 	std::thread reader(&readerThread, &fd);
