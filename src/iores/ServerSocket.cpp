@@ -33,8 +33,11 @@ int ServerSocket::listenSocket( int n ) {
 
 Socket* ServerSocket::acceptSocket() {
 	int f;
+#ifdef _WIN32
+	f = accept(sock, (struct sockaddr*) &serv, (int*)&serv_len);
+#else
 	f = accept(sock, (struct sockaddr*) &serv, &serv_len);
-
+#endif
 	if (f < 0) {
 		return (Socket*) nullptr;
 	}
