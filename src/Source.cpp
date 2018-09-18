@@ -207,7 +207,7 @@ int main(int argc , char** argv ) {
 	raw();
 	keypad(mapWin, true);
 	initMap();
-	//std::thread message(&messageThread);
+	std::thread message(&messageThread);
 	std::thread reader(&readerThread, &fd);
 
 	char buffer[STD_LEN];
@@ -234,7 +234,7 @@ int main(int argc , char** argv ) {
 			fd.closeSocket();
 			STATE = -1;
 			messageCond.notify_all();
-			//message.join();
+			message.join();
 			reader.join();
 			refresh();
 			endwin();
@@ -344,12 +344,12 @@ void messageThread() {
 
 		screenLock.lock();
 
-		/*if (curx == messageWin->_maxy) {
+		if (curx == getmaxy(messageWin)) {
 			curx--;
 			wmove(messageWin, 0, 0);
 			wdeleteln(messageWin);
 			//mvwdeleteln(messageWin, 0, 0);
-		}*/
+		}
 
 		buffer = messageQueue.front();
 		messageQueue.pop();
