@@ -36,7 +36,7 @@ monster::~monster() {
 		free(name);
 
 	if (id)
-		delete (id);
+		free(id);
 }
 
 void monster::calculateStats() {

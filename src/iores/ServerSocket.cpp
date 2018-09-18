@@ -33,7 +33,7 @@ int ServerSocket::listenSocket( int n ) {
 
 Socket* ServerSocket::acceptSocket() {
 	int f;
-	f = accept(sock, (struct sockaddr*) &serv, (int*)&serv_len);
+	f = accept(sock, (struct sockaddr*) &serv, &serv_len);
 
 	if (f < 0) {
 		return (Socket*) nullptr;

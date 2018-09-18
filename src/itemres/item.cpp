@@ -28,7 +28,7 @@ item::~item() {
 	if (name)
 		free(name);
 	if (id)
-		delete (id);
+		free(id);
 }
 
 void item::setName(const char* name_t) {

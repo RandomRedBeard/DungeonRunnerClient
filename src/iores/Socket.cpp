@@ -33,7 +33,7 @@ Socket::Socket(std::string addr, int port) {
 
 	getaddrinfo(addr.c_str(), portBuffer, &hints, &taddr);
 
-	connect(fd, taddr->ai_addr, taddr->ai_addrlen);
+	connect(fd, (sockaddr*)taddr->ai_addr, taddr->ai_addrlen);
 }
 
 Socket::~Socket() {
