@@ -255,6 +255,9 @@ int main(int argc , char** argv ) {
 		else if (n == INP_RIGHT) {
 			y = 1;
 		}
+		else if (n == KEY_MOUSE) {
+			addMessage("Mouse");
+		}
 		else if (n == INP_QUIT) {
 			fd.shutdownSocket();
 			fd.closeSocket();
