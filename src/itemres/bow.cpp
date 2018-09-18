@@ -53,10 +53,3 @@ int bow::rangeAttack(arrow* ar) {
 
 	return n * dmg;
 }
-
-int bow::snprintItem(char *buffer, int len)
-{
-	return snprintf(buffer, len, "%s %s lvl(%d) %d-%d E=%s\n", getName(), getId(), getLvl() , rangeMaxDmg , rangeMinDmg , isEquip()?"true":"false");
-
-}
-

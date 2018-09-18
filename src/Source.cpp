@@ -41,6 +41,7 @@ int INP_QUIT = 'q';
 int INP_PICKUP = ' ';
 int INP_SHOW_INVENTORY = 'i';
 int INP_EQUIP = 'e';
+int INP_UNEQUIP = 'u';
 int INP_TRAVEL = 't';
 
 int POLL_WAIT_TIMEOUT = -1;
@@ -118,6 +119,7 @@ int level(Socket*);
 
 int showInventory();
 int showEquip(Socket*);
+int showUnequip(Socket*);
 
 int pmvwaddch(WINDOW* w, point pt, int c) {
 	return mvwaddch(w, pt.getX(), pt.getY(), c);
@@ -260,6 +262,9 @@ int main(int argc , char** argv ) {
 		else if (n == INP_EQUIP) {
 			showEquip(&fd);
 			continue;
+		}
+		else if (n == INP_UNEQUIP) {
+			showUnequip(&fd);
 		}
 		else if (n == INP_TRAVEL) {
 			snprintf(buffer, STD_LEN, "%s%c", TRAVEL_REQUEST_OP, OP_SEP);
@@ -1387,6 +1392,63 @@ int showEquip(Socket* fd ) {
 
 	REFRESH = true;
 	
+	redrawwin(targetWin);
+	wrefresh(targetWin);
+
+	redrawwin(borderWin);
+	wrefresh(borderWin);
+
+	redrawwin(hudWin);
+	wrefresh(hudWin);
+
+	redrawwin(messageWin);
+	wrefresh(messageWin);
+
+	redrawwin(mapWin);
+	wrefresh(mapWin);
+
+	screenLock.unlock();
+
+	return 0;
+}
+
+int showUnequip(Socket* fd) {
+	char buffer[1024];
+	memset(buffer, 0, 1024);
+	multiplayerLock.lock();
+
+	me->sprintInventory(buffer, 1023);
+
+	multiplayerLock.unlock();
+
+	screenLock.lock();
+	REFRESH = false;
+
+	wclear(inventoryWin);
+	mvwprintw(inventoryWin, 0, 0, "Inventory\n\n");
+	waddstr(inventoryWin, buffer);
+	wprintw(inventoryWin, "\nWhat would you like to unequip? MainHand(m), OffHand(o), Body(b)");
+	wrefresh(inventoryWin);
+
+	screenLock.unlock();
+
+	int n = wgetch(inventoryWin);
+
+	if (n == 'm') {
+		snprintf(buffer, STD_LEN, "%s%c%s%c", UNEQUIP_OP, OP_SEP, MAINHAND_OP, OP_SEP);
+		fd->write(buffer, strlen(buffer));
+	} else if (n == 'o') {
+		snprintf(buffer, STD_LEN, "%s%c%s%c", UNEQUIP_OP, OP_SEP, OFFHAND_OP, OP_SEP);
+		fd->write(buffer, strlen(buffer));
+	} else if (n == 'b') {
+		snprintf(buffer, STD_LEN, "%s%c%s%c", UNEQUIP_OP, OP_SEP, BODY_OP, OP_SEP);
+		fd->write(buffer, strlen(buffer));
+	}
+
+	screenLock.lock();
+
+	REFRESH = true;
+
 	redrawwin(targetWin);
 	wrefresh(targetWin);
 

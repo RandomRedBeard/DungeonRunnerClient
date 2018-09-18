@@ -45,6 +45,8 @@ class player {
 	int findItem(const char*);
 
 	void calculateHealth();
+
+	int sprintItem(item*, char*, int);
 public:
 	player();
 	virtual ~player();

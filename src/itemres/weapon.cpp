@@ -58,7 +58,3 @@ bool weapon::isEquip() {
 int weapon::melee() {
 	return mindmg + rand() % (maxdmg - mindmg + 1);
 }
-
-int weapon::snprintItem(char* buffer, int len) {
-	return snprintf(buffer, len, "%s %s lvl(%d) %d-%d E=%s\n", getName(), getId(), getLvl() , maxdmg , mindmg,equipped?"true":"false");
-}

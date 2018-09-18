@@ -27,8 +27,6 @@ public:
 	int getRangeMinDmg();
 
 	int rangeAttack(arrow*);
-
-	int snprintItem(char*, int);
 };
 
 #endif /* BOW_H_ */

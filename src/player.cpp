@@ -59,6 +59,47 @@ void player::calculateHealth() {
 	maxhp = 100 + (10 * (lvl - 1));
 }
 
+int player::sprintItem(item* it, char* buffer, int len) {
+	bow* b = dynamic_cast<bow*>(it);
+	weapon* w = dynamic_cast<weapon*>(it);
+	armor* ar = dynamic_cast<armor*>(it);
+	int l = 0;
+	if (b) {
+		l = snprintf(buffer, len, "%s %s lvl(%d) %d-%d", b->getName(), b->getId(), b->getLvl(), b->getRangeMaxDmg(), b->getRangeMinDmg());
+		if (b == mainhand) {
+			strcat(buffer, " (m)");
+		}
+		else if (b == offhand) {
+			strcat(buffer, " (o)");
+		}
+
+		strcat(buffer, "\n");
+
+		return l;
+	} else if (w) {
+		l = snprintf(buffer, len, "%s %s lvl(%d) %d-%d", w->getName(), w->getId(), w->getLvl(), w->getMaxDmg(), w->getMinDmg());
+		if (w == mainhand) {
+			strcat(buffer, " (m)");
+		}
+		else if (w == offhand) {
+			strcat(buffer, " (o)");
+		}
+
+		strcat(buffer, "\n");
+
+		return l;
+	} else if (ar) {
+		l = snprintf(buffer, len, "%s %s lvl(%d) %d", ar->getName(), ar->getId(), ar->getLvl(), ar->getAc());
+		if (ar == body) {
+			strcat(buffer, " (b)");
+		}
+
+		strcat(buffer, "\n");
+
+		return l;
+	}
+}
+
 void player::setName(const char* buffer) {
 	if (name) {
 		free(name);
@@ -274,7 +315,7 @@ int player::sprintInventory(char* buffer, int len) {
 	for (item* it : inventory) {
 		memset(tempBuffer, 0, STD_LEN);
 		snprintf(tempBuffer, STD_LEN, "%d: ", index++);
-		val += it->snprintItem((tempBuffer + strlen(tempBuffer)), STD_LEN);
+		val += sprintItem(it, (tempBuffer + strlen(tempBuffer)), STD_LEN);
 		if (val >= len) {
 			return val;
 		}

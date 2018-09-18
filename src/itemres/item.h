@@ -36,8 +36,6 @@ public:
 	virtual int getLvl();
 	virtual void setIcon(char);
 	virtual char getIcon();
-
-	virtual int snprintItem(char*, int);
 };
 
 #endif /* ITEM_H_ */

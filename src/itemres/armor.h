@@ -25,8 +25,6 @@ public:
 	void equip();
 	void unequip();
 	bool isEquip();
-
-	int snprintItem(char*, int);
 };
 
 #endif /* ARMOR_H_ */

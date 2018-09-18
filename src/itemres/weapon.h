@@ -30,8 +30,6 @@ public:
 	bool isEquip();
 
 	virtual int melee();
-
-	int snprintItem(char*, int);
 };
 
 #endif /* WEAPON_H_ */

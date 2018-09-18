@@ -44,7 +44,3 @@ void armor::unequip() {
 bool armor::isEquip() {
 	return equipped;
 }
-
-int armor::snprintItem(char *buffer, int len) {
-	return snprintf(buffer, len, "%s %s lvl(%d) %d E=%s\n", getName(), getId(), getLvl() , ac,equipped?"true":"false");
-}

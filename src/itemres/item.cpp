@@ -79,7 +79,3 @@ void item::setIcon(char c) {
 char item::getIcon() {
 	return icon;
 }
-
-int item::snprintItem(char* buffer, int len) {
-	return snprintf(buffer, len, "%s %s lvl(%d)\n", name, id, lvl);
-}
