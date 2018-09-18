@@ -1467,7 +1467,26 @@ int range(Socket* fd) {
 }
 
 int playerToMonsterRange(const char* p_name, const char* vic_id, int dmg) {
+	multiplayerLock.lock();
 
+	player* p = findPlayer(p_name);
+	monster* m = findMonster(vic_id);
+
+	if (!p || !m) {
+		multiplayerLock.unlock();
+		return -1;
+	}
+
+	p->range();
+	m->takeDamage(dmg);
+
+	if (p == me) {
+		addMessage("You hit %s for %d", vic_id, dmg);
+	}
+
+	multiplayerLock.unlock();
+
+	return 0;
 }
 
 int killed(Socket* fd) {
