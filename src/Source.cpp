@@ -181,7 +181,7 @@ int main(int argc , char** argv ) {
 #endif
 
 	MAP = (char*)malloc((HEIGHT * WIDTH) + 1);
-	Socket fd("127.0.0.1", 5000);
+	Socket fd(addr, port);
 
 	me = new player();
 	me->setName(handle);
