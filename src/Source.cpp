@@ -106,6 +106,7 @@ int monsterMove(Socket*);
 int playerMove(Socket*);
 int pickup(Socket*);
 int equip(Socket*);
+int unequip(Socket*);
 int melee(Socket*);
 int playerToMonsterMelee( const char* , const char* , int );
 int monsterToPlayerMelee(const char*, const char*,int);
@@ -388,6 +389,9 @@ void readerThread(Socket* fd) {
 		}
 		else if (strcmp(buffer, EQUIP_OP) == 0) {
 			equip(fd);
+		}
+		else if (strcmp(buffer, UNEQUIP_OP) == 0) {
+			unequip(fd);
 		}
 		else if (strcmp(buffer, MELEE_OP) == 0) {
 			melee(fd);
@@ -1025,6 +1029,7 @@ int equip(Socket* fd) {
 	}
 
 	if (p->equip(id, part) < 0) {
+		multiplayerLock.unlock();
 		return -1;
 	}
 
@@ -1039,6 +1044,42 @@ int equip(Socket* fd) {
 	
 
 	return 0; 
+}
+
+int unequip(Socket* fd) {
+	char name[STD_LEN], eq_part[STD_LEN];
+
+	if (fd->read(name) < 0) {
+		return -1;
+	}
+
+	if (fd->read(eq_part) < 0) {
+		return -1;
+	}
+
+	multiplayerLock.lock();
+
+	player* p = findPlayer(name);
+	if (!p) {
+		multiplayerLock.unlock();
+		return -1;
+	}
+
+	if (p->unequip(eq_part) < 0) {
+		multiplayerLock.unlock();
+		return -1;
+	}
+
+	if (p == me) {
+		screenLock.lock();
+		printHud();
+		screenLock.unlock();
+		addMessage("You unequip %s", eq_part);
+	}
+
+	multiplayerLock.unlock();
+
+	return 0;
 }
 
 int melee(Socket* fd) {
