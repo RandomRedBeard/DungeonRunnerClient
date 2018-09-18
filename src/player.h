@@ -60,6 +60,9 @@ public:
 	void setMaxHp(int);
 	int getMaxHp();
 
+	int getCurXp();
+	int getNextXp();
+
 	int getAc();
 
 	int pickUp(item*);

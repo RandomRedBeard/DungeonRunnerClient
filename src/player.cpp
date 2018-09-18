@@ -104,6 +104,14 @@ int player::getMaxHp() {
 	return maxhp;
 }
 
+int player::getCurXp(){
+	return curxp;
+}
+
+int player::getNextXp(){
+	return nextxp;
+}
+
 int player::getAc() {
 	return body?body->getAc():0;
 }

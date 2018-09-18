@@ -16,11 +16,10 @@
 #include "monsterres/monster.h"
 #include "player.h"
 
-#ifdef _WIN32
+#if defined (_WIN32) || defined (WIN64)
 #pragma comment(lib,"Ws2_32.lib")
-#endif
-
 #pragma comment(lib,"pdcurses.lib")
+#endif
 
 #define PORT_ARG 'p'
 #define ADDR_ARG 'a'
@@ -137,7 +136,7 @@ int getInput(WINDOW* win) {
 }
 
 void printHud() {
-	mvwprintw(hudWin, 0, 0, "%s %d(%d) lvl(%d) Ac(%d)", me->getName(), me->getCurHp(), me->getMaxHp(), me->getLvl(),me->getAc());
+	mvwprintw(hudWin, 0, 0, "%s %d(%d) lvl(%d) Ac(%d) XP=%d/%d ", me->getName(), me->getCurHp(), me->getMaxHp(), me->getLvl(),me->getAc(), me->getCurXp(), me->getNextXp());
 	wrefresh(hudWin);
 	wrefresh(mapWin);
 }
@@ -180,7 +179,7 @@ int main(int argc , char** argv ) {
 #endif
 	}
 
-#ifdef _WIN32
+#if defined (_WIN32) || defined (_WIN64)
 	WSADATA wsa;
 	WSAStartup(MAKEWORD(2, 2), &wsa);
 #endif
@@ -236,6 +235,7 @@ int main(int argc , char** argv ) {
 			y = 1;
 		}
 		else if (n == INP_QUIT) {
+			fd.shutdownSocket();
 			fd.closeSocket();
 			STATE = -1;
 			messageCond.notify_all();
@@ -1189,6 +1189,9 @@ int playerKilledMonster(Socket* fd, const char* att_id, const char* vic_id) {
 	}
 
 	if (REFRESH) {
+		if (p == me){
+			printHud();
+		}
 		wrefresh(mapWin);
 	}
 
@@ -1202,6 +1205,7 @@ int playerKilledMonster(Socket* fd, const char* att_id, const char* vic_id) {
 }
 
 int monsterKilledPlayer(const char* att_id, const char* vic_id) {
+	addMessage("%s has died", vic_id);
 	return 0;
 }
 
