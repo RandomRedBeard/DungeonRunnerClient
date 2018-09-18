@@ -124,6 +124,10 @@ int melee(Socket*);
 int playerToMonsterMelee( const char* , const char* , int );
 int monsterToPlayerMelee(const char*, const char*,int);
 
+int range(Socket*);
+int playerToMonsterRange(const char*, const char*, int);
+//monster to player
+
 int killed(Socket*);
 int playerKilledMonster(Socket* fd , const char*, const char*);
 int monsterKilledPlayer(const char*, const char*);
@@ -1430,6 +1434,40 @@ int monsterToPlayerMelee(const char* att_id, const char* vic_id, int dmg) {
 	multiplayerLock.unlock();
 
 	return 0;
+}
+
+int range(Socket* fd) {
+	char attr_type[STD_LEN], attr_id[STD_LEN], vic_type[STD_LEN], vic_id[STD_LEN], dmg[STD_LEN];
+
+	if (fd->read(attr_type) < 0) {
+		return -1;
+	}
+
+	if (fd->read(attr_id) < 0) {
+		return -1;
+	}
+
+	if (fd->read(vic_type) < 0) {
+		return -1;
+	}
+
+	if (fd->read(vic_id) < 0) {
+		return -1;
+	}
+
+	if (fd->read(dmg) < 0) {
+		return -1;
+	}
+
+	if (strcmp(attr_type, PLAYER_OP) == 0 && strcmp(vic_type, MONSTER_OP) == 0) {
+		return playerToMonsterRange(attr_id, vic_id, strtol(dmg, nullptr, 0));
+	}
+
+	return -1;
+}
+
+int playerToMonsterRange(const char* p_name, const char* vic_id, int dmg) {
+
 }
 
 int killed(Socket* fd) {
