@@ -48,6 +48,10 @@ int POLL_WAIT_TIMEOUT = -1;
 unsigned int MIN_NUMBER_ARROWS = 1;
 unsigned int MAX_NUMBER_ARROWS = 6;
 
+#if !defined (_WIN32) && !defined (_WIN64)
+unsigned int STD_LEN = 128;
+#endif
+
 unsigned int HEIGHT = 25;
 unsigned int WIDTH = 80;
 
