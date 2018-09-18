@@ -344,12 +344,12 @@ void messageThread() {
 
 		screenLock.lock();
 
-		if (curx == messageWin->_maxy) {
+		/*if (curx == messageWin->_maxy) {
 			curx--;
 			wmove(messageWin, 0, 0);
 			wdeleteln(messageWin);
 			//mvwdeleteln(messageWin, 0, 0);
-		}
+		}*/
 
 		buffer = messageQueue.front();
 		messageQueue.pop();
@@ -427,7 +427,7 @@ player* findPlayer(const char* name) {
 			return p;
 		}
 	}
-	
+
 	return (player*)nullptr;
 }
 
@@ -466,19 +466,31 @@ int acceptTravel(Socket* fd) {
 
 	me->setPt(point(pt));
 
-	monster* m;
+	/*monster* m;
 	while (monsters.size() != 0) {
 		m = monsters.front();
 		monsters.erase(monsters.begin());
-		delete(m);
+		//delete(m);
 	}
 
 	item* it;
 	while (items.size() != 0) {
 		it = items.front();
 		items.erase(items.begin());
-		delete(it);
+		//delete(it);
+	}*/
+
+	for ( monster* m : monsters ) {
+		delete m;
 	}
+
+	monsters.clear();
+
+	for ( item* it : items ) {
+		delete it;
+	}
+
+	items.clear();
 
 	player* p;
 	while (players.size() != 0) {

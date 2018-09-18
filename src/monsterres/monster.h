@@ -21,10 +21,6 @@
 #include "../point.h"
 
 class monster {
-	std::mutex myLock;
-	std::condition_variable sig;
-	std::thread* t;
-
 	int state;
 
 	char* id;
@@ -42,20 +38,10 @@ class monster {
 
 	int baseMax, baseMin;
 	int maxdmg, mindmg;
-
-	void calculateStats();
 public:
 	monster();
 	monster(const char*, char*, int, int, int, int, int, int);
 	virtual ~monster();
-
-	std::mutex* getLock();
-	std::condition_variable* getCond();
-
-	int lock();
-	int unlock();
-
-	void setThread(std::thread*);
 
 	void setId(char*);
 	char* getId();
@@ -80,7 +66,6 @@ public:
 	void setMinDmg(int);
 	int getMinDmg();
 
-	int killed();
 	int melee();
 	int takeDamage(int);
 };

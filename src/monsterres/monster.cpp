@@ -9,66 +9,16 @@
 
 monster::monster() {
 	state = STATE_NORM;
-}
-
-monster::monster(const char* name_t, char* tid, int level, int hp, int tac,
-		int txp, int xd, int nd) :
-		id(tid), lvl(level), baseHp(hp), baseAc(tac), xp(txp), baseMax(xd), baseMin(
-				nd) {
-	state = STATE_NORM;
-
-	name = (char*) nullptr;
-	setName(name_t);
-
-	calculateStats();
-
-	t = (std::thread*) nullptr;
+	name = (char*)nullptr;
+	id = (char*)nullptr;
 }
 
 monster::~monster() {
-	killed();
-	if (t) {
-		t->join();
-		delete (t);
-	}
-
 	if (name)
 		free(name);
 
 	if (id)
 		free(id);
-}
-
-void monster::calculateStats() {
-	curhp = maxhp = baseHp * lvl;
-	ac = baseAc * lvl;
-
-	maxdmg = baseMax * lvl;
-	mindmg = baseMin * lvl;
-
-	xp = xp * lvl;
-}
-
-std::mutex* monster::getLock() {
-	return &myLock;
-}
-
-std::condition_variable* monster::getCond() {
-	return &sig;
-}
-
-int monster::lock() {
-	myLock.lock();
-	return 0;
-}
-
-int monster::unlock() {
-	myLock.unlock();
-	return 0;
-}
-
-void monster::setThread(std::thread* newThread) {
-	t = newThread;
 }
 
 void monster::setId(char* tid) {
@@ -166,31 +116,6 @@ void monster::setMinDmg(int ndmg) {
 
 int monster::getMinDmg() {
 	return mindmg;
-}
-
-int monster::killed() {
-	int n;
-	n = lock();
-	if (n != 0) {
-		logerr("%s killed lock failure %s\n", name, strerror(n));
-		return -1;
-	}
-
-	state = STATE_DEAD;
-
-	sig.notify_all();
-	if (n != 0) {
-		logerr("%s killed signal failure %s\n", name, strerror(n));
-		return -1;
-	}
-
-	n = unlock();
-	if (n != 0) {
-		logerr("%s killed unlock failure %s\n", name, strerror(n));
-		return -1;
-	}
-
-	return 0;
 }
 
 int monster::melee() {
