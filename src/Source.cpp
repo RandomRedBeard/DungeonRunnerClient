@@ -10,7 +10,6 @@
 #include <curses.h>
 
 #include "globals.h"
-#include "itemres/itemgen.h"
 #include "topt/topt.h"
 #include "iores/Socket.h"
 #include "monsterres/monster.h"
@@ -44,6 +43,7 @@ int INP_EQUIP = 'e';
 int INP_UNEQUIP = 'u';
 int INP_DROP = 'D';
 int INP_TRAVEL = 't';
+int INP_SETTINGS = 'S';
 
 int POLL_WAIT_TIMEOUT = -1;
 unsigned int MIN_NUMBER_ARROWS = 1;
@@ -139,6 +139,7 @@ int showEquip(Socket*);
 int showUnequip(Socket*);
 int showDrop(Socket*);
 int handleMouse(MEVENT, Socket*);
+int changeKeyMappings();
 
 int pmvwaddch(WINDOW* w, point pt, int c) {
 	return mvwaddch(w, pt.getX(), pt.getY(), c);
@@ -301,6 +302,10 @@ int main(int argc , char** argv ) {
 		else if (n == INP_TRAVEL) {
 			snprintf(buffer, STD_LEN, "%s%c", TRAVEL_REQUEST_OP, OP_SEP);
 			fd.write(buffer, strlen(buffer));
+			continue;
+		}
+		else if (n == INP_SETTINGS) {
+			changeKeyMappings();
 			continue;
 		}
 
@@ -1897,4 +1902,55 @@ int handleMouse(MEVENT ev, Socket* fd) {
 	}
 
 	multiplayerLock.unlock();
+}
+
+int changeKeyMappings() {
+	screenLock.lock();
+
+	REFRESH = false;
+
+	wclear(inventoryWin);
+
+	wmove(inventoryWin, 0, 0);
+
+	wprintw(inventoryWin, "UP - %c\n", INP_UP);
+	wprintw(inventoryWin, "DOWN - %c\n", INP_DOWN);
+	wprintw(inventoryWin, "LEFT - %c\n", INP_LEFT);
+	wprintw(inventoryWin, "RIGHT - %c\n", INP_RIGHT);
+	wprintw(inventoryWin, "QUIT - %c\n", INP_QUIT);
+	wprintw(inventoryWin, "PICKUP - %c\n", INP_PICKUP);
+	wprintw(inventoryWin, "SHOW INVENTORY - %c\n", INP_SHOW_INVENTORY);
+	wprintw(inventoryWin, "EQUIP - %c\n", INP_EQUIP);
+	wprintw(inventoryWin, "UNEQUIP - %c\n", INP_UNEQUIP);
+	wprintw(inventoryWin, "DROP - %c\n" , INP_DROP);
+	wprintw(inventoryWin, "TRAVEL - %c\n", INP_TRAVEL);
+
+	wrefresh(inventoryWin);
+
+	screenLock.unlock();
+
+	wgetch(inventoryWin);
+
+	screenLock.lock();
+
+	REFRESH = true;
+
+	redrawwin(targetWin);
+	wrefresh(targetWin);
+
+	redrawwin(borderWin);
+	wrefresh(borderWin);
+
+	redrawwin(hudWin);
+	wrefresh(hudWin);
+
+	redrawwin(messageWin);
+	wrefresh(messageWin);
+
+	redrawwin(mapWin);
+	wrefresh(mapWin);
+
+	screenLock.unlock();
+
+	return 0;
 }
