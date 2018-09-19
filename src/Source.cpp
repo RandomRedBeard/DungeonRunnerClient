@@ -16,7 +16,7 @@
 #include "monsterres/monster.h"
 #include "player.h"
 
-#if defined (_WIN32) || defined (WIN64)
+#if defined (_WIN32) || defined (_WIN64)
 #pragma comment(lib,"Ws2_32.lib")
 #pragma comment(lib,"pdcurses.lib")
 #endif
@@ -229,16 +229,12 @@ int main(int argc , char** argv ) {
 
 	initscr();
 	noecho();
-	keypad(stdscr, true);
+	initMap();
+	//keypad(stdscr, true);
 	keypad(mapWin, true);
 	mousemask(ALL_MOUSE_EVENTS, nullptr);
 	mouseinterval(0);
-	if (!has_mouse()) {
-		endwin();
-		return -1;
-	}
 
-	initMap();
 	std::thread message(&messageThread);
 	std::thread reader(&readerThread, &fd);
 
