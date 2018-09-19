@@ -38,7 +38,7 @@ player::~player() {
 	arrow* ar;
 	while (quiver.size() != 0) {
 		ar = quiver.front();
-		quiver.pop();
+		quiver.erase(quiver.begin());
 		delete (ar);
 	}
 }
@@ -160,7 +160,7 @@ int player::getAc() {
 int player::pickUp(item* it) {
 	arrow* ar = dynamic_cast<arrow*>(it);
 	if (ar) {
-		quiver.push(ar);
+		quiver.push_back(ar);
 	} else {
 		inventory.push_back(it);
 	}
@@ -277,7 +277,7 @@ int player::range() {
 	arrow* ar = quiver.front();
 	int dmg = b->rangeAttack(ar);
 	if (ar->getNumberArrows() <= 0) {
-		quiver.pop();
+		quiver.erase(quiver.begin());
 		delete (ar);
 	}
 
@@ -322,6 +322,15 @@ int player::sprintInventory(char* buffer, int len) {
 		strcat(buffer, tempBuffer);
 	}
 
+	int narrows = 0;
+	for (arrow* ar : quiver) {
+		narrows += ar->getNumberArrows();
+	}
+
+	memset(tempBuffer, 0, STD_LEN);
+	snprintf(tempBuffer, STD_LEN, "\nArrows: %d\n", narrows);
+	strcat(buffer, tempBuffer);
+
 	return val;
 }
 
@@ -331,4 +340,20 @@ item* player::getItem(int index) {
 	}
 
 	return inventory[index];
+}
+
+bool player::attemptRange(point pt) {
+	if (!dynamic_cast<bow*>(mainhand)) {
+		return false;
+	}
+
+	if (quiver.size() == 0) {
+		return false;
+	}
+
+	/*
+	 * range check
+	 */
+
+	return true;
 }
