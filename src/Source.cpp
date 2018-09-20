@@ -141,28 +141,10 @@ int showDrop(Socket*);
 int handleMouse(MEVENT, Socket*);
 int changeKeyMappings();
 
-int pmvwaddch(WINDOW* w, point pt, int c) {
-	return mvwaddch(w, pt.getX(), pt.getY(), c);
-}
-
-void returnCurs() {
-	wmove(mapWin, me->getPt().getX(), me->getPt().getY());
-}
-
-int getInput(WINDOW* win) {
-	/*char buffer[1];
-	memset(buffer, 0, 1);
-	fread(buffer, 1, 1, stdin);
-	return *buffer;*/
-
-	return wgetch(win);
-}
-
-void printHud() {
-	mvwprintw(hudWin, 0, 0, "%s %d(%d) lvl(%d) Ac(%d) XP=%d/%d ", me->getName(), me->getCurHp(), me->getMaxHp(), me->getLvl(),me->getAc(), me->getCurXp(), me->getNextXp());
-	wrefresh(hudWin);
-	wrefresh(mapWin);
-}
+int pmvwaddch(WINDOW*, point, int);
+void returnCurs();
+void printHud();
+int tgetmouse(MEVENT*);
 
 int main(int argc , char** argv ) {
 	int opt, port = 5000;
@@ -247,7 +229,7 @@ int main(int argc , char** argv ) {
 
 	while (true) {
 		x = y = 0;
-		int n = getInput(mapWin);
+		int n = wgetch(mapWin);
 
 		if (n == INP_UP) {
 			x = -1;
@@ -262,7 +244,7 @@ int main(int argc , char** argv ) {
 			y = 1;
 		}
 		else if (n == KEY_MOUSE) {
-			if (getmouse(&ev) == OK) {
+			if (tgetmouse(&ev) == OK) {
 				handleMouse(ev, &fd);
 				continue;
 			}
@@ -324,6 +306,27 @@ int main(int argc , char** argv ) {
 		fd.write(buffer, strlen(buffer));
 	}
 	endwin();
+}
+
+int tgetmouse(MEVENT* ev) {
+#if defined (_WIN32) || defined (_WIN64)
+	return nc_getmouse(ev);
+#else
+	return getmouse(ev);
+#endif
+}
+int pmvwaddch(WINDOW* win, point pt, int c) {
+	return mvwaddch(win, pt.getX(), pt.getY(), c);
+}
+
+void returnCurs() {
+	wmove(mapWin, me->getPt().getX(), me->getPt().getY());
+}
+
+void printHud() {
+	mvwprintw(hudWin, 0, 0, "%s %d(%d) lvl(%d) AC(%d) XP=%d/%d", me->getName(), me->getCurHp(), me->getMaxHp(), me->getLvl(), me->getAc(), me->getCurXp(), me->getNextXp());
+	wrefresh(hudWin);
+	wrefresh(mapWin);
 }
 
 void initMap() {
@@ -1655,7 +1658,7 @@ int showInventory() {
 	wrefresh(inventoryWin);
 
 	screenLock.unlock();
-	getInput(inventoryWin);
+	wgetch(inventoryWin);
 	screenLock.lock();
 	REFRESH = true;
 
@@ -1698,9 +1701,9 @@ int showEquip(Socket* fd ) {
 	wrefresh(inventoryWin);
 
 	screenLock.unlock();
-	
+
 	int n = wgetch(inventoryWin) - '0';
-	
+
 	multiplayerLock.lock();
 
 	item* it = me->getItem(n);
@@ -1714,7 +1717,7 @@ int showEquip(Socket* fd ) {
 		wrefresh(inventoryWin);
 		screenLock.unlock();
 
-		n = getInput(inventoryWin);
+		n = wgetch(inventoryWin);
 		if (n == 'm') {
 			snprintf(buffer, STD_LEN, "%s%c%s%c%s%c", EQUIP_OP, OP_SEP, it->getId(), OP_SEP, MAINHAND_OP, OP_SEP);
 		}
