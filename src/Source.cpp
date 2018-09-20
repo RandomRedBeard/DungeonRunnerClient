@@ -10,7 +10,6 @@
 #include <curses.h>
 
 #include "globals.h"
-#include "itemres/itemgen.h"
 #include "topt/topt.h"
 #include "iores/Socket.h"
 #include "monsterres/monster.h"
@@ -44,6 +43,7 @@ int INP_EQUIP = 'e';
 int INP_UNEQUIP = 'u';
 int INP_DROP = 'D';
 int INP_TRAVEL = 't';
+int INP_SETTINGS = 'S';
 
 int POLL_WAIT_TIMEOUT = -1;
 unsigned int MIN_NUMBER_ARROWS = 1;
@@ -138,6 +138,8 @@ int showInventory();
 int showEquip(Socket*);
 int showUnequip(Socket*);
 int showDrop(Socket*);
+int handleMouse(MEVENT, Socket*);
+int changeKeyMappings();
 
 int pmvwaddch(WINDOW* w, point pt, int c) {
 	return mvwaddch(w, pt.getX(), pt.getY(), c);
@@ -234,6 +236,7 @@ int main(int argc , char** argv ) {
 	keypad(mapWin, true);
 	mousemask(ALL_MOUSE_EVENTS, nullptr);
 	mouseinterval(0);
+	MEVENT ev;
 
 	std::thread message(&messageThread);
 	std::thread reader(&readerThread, &fd);
@@ -246,12 +249,6 @@ int main(int argc , char** argv ) {
 		x = y = 0;
 		int n = getInput(mapWin);
 
-		switch(n){
-		case KEY_MOUSE:
-			addMessage("Mouse");
-			break;
-		}
-
 		if (n == INP_UP) {
 			x = -1;
 		}
@@ -263,6 +260,12 @@ int main(int argc , char** argv ) {
 		}
 		else if (n == INP_RIGHT) {
 			y = 1;
+		}
+		else if (n == KEY_MOUSE) {
+			if (getmouse(&ev) == OK) {
+				handleMouse(ev, &fd);
+				continue;
+			}
 		}
 		else if (n == INP_QUIT) {
 			fd.shutdownSocket();
@@ -299,6 +302,10 @@ int main(int argc , char** argv ) {
 		else if (n == INP_TRAVEL) {
 			snprintf(buffer, STD_LEN, "%s%c", TRAVEL_REQUEST_OP, OP_SEP);
 			fd.write(buffer, strlen(buffer));
+			continue;
+		}
+		else if (n == INP_SETTINGS) {
+			changeKeyMappings();
 			continue;
 		}
 
@@ -430,6 +437,9 @@ void readerThread(Socket* fd) {
 		}
 		else if (strcmp(buffer, DROP_OP) == 0) {
 			drop(fd);
+		}
+		else if (strcmp(buffer, RANGE_OP) == 0) {
+			range(fd);
 		}
 		else if (strcmp(buffer, MELEE_OP) == 0) {
 			melee(fd);
@@ -1833,6 +1843,93 @@ int showDrop(Socket* fd) {
 	}
 
 	multiplayerLock.unlock();
+
+	screenLock.lock();
+
+	REFRESH = true;
+
+	redrawwin(targetWin);
+	wrefresh(targetWin);
+
+	redrawwin(borderWin);
+	wrefresh(borderWin);
+
+	redrawwin(hudWin);
+	wrefresh(hudWin);
+
+	redrawwin(messageWin);
+	wrefresh(messageWin);
+
+	redrawwin(mapWin);
+	wrefresh(mapWin);
+
+	screenLock.unlock();
+
+	return 0;
+}
+
+int handleMouse(MEVENT ev, Socket* fd) {
+	if (!(ev.bstate & BUTTON1_PRESSED)) {
+		return -1;
+	}
+
+	// Attempts to convert coor into mapWin coor
+	int val = wmouse_trafo(mapWin, &ev.y, &ev.x, false);
+	if (!val) {
+		return -1;
+	}
+	/*
+	 * y is vertical
+	 * x is horizon
+	 */
+
+	point pt(ev.y, ev.x);
+
+	multiplayerLock.lock();
+
+	if (!me->attemptRange(pt)) {
+		multiplayerLock.unlock();
+		return -1;
+	}
+
+	for (monster* m : monsters) {
+		if (pt.l1dist(m->getPt()) < 2) {
+			char buffer[STD_LEN];
+			snprintf(buffer, STD_LEN, "%s%c%s%c%s%c", RANGE_OP, OP_SEP, MONSTER_OP, OP_SEP, m->getId(), OP_SEP);
+			fd->write(buffer, strlen(buffer));
+			break;
+		}
+	}
+
+	multiplayerLock.unlock();
+}
+
+int changeKeyMappings() {
+	screenLock.lock();
+
+	REFRESH = false;
+
+	wclear(inventoryWin);
+
+	wmove(inventoryWin, 0, 0);
+
+	wprintw(inventoryWin, "UP - %c\n", INP_UP);
+	wprintw(inventoryWin, "DOWN - %c\n", INP_DOWN);
+	wprintw(inventoryWin, "LEFT - %c\n", INP_LEFT);
+	wprintw(inventoryWin, "RIGHT - %c\n", INP_RIGHT);
+	wprintw(inventoryWin, "QUIT - %c\n", INP_QUIT);
+	wprintw(inventoryWin, "PICKUP - %c\n", INP_PICKUP);
+	wprintw(inventoryWin, "SHOW INVENTORY - %c\n", INP_SHOW_INVENTORY);
+	wprintw(inventoryWin, "EQUIP - %c\n", INP_EQUIP);
+	wprintw(inventoryWin, "UNEQUIP - %c\n", INP_UNEQUIP);
+	wprintw(inventoryWin, "DROP - %c\n" , INP_DROP);
+	wprintw(inventoryWin, "TRAVEL - %c\n", INP_TRAVEL);
+
+	wrefresh(inventoryWin);
+
+	screenLock.unlock();
+
+	wgetch(inventoryWin);
 
 	screenLock.lock();
 

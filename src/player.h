@@ -38,7 +38,7 @@ class player {
 	int state;
 
 	std::vector<item*> inventory;
-	std::queue<arrow*> quiver;
+	std::vector<arrow*> quiver;
 	weapon* mainhand, *offhand;
 	armor* body;
 
@@ -83,6 +83,8 @@ public:
 	int sprintInventory(char*, int);
 
 	item* getItem(int);
+
+	bool attemptRange(point);
 };
 
 #endif 
