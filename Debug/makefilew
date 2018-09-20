@@ -1,0 +1,22 @@
+CC = cl
+CFLAG = /EHsc /c
+INCLUDES = /I ..\pdcurses
+LINKS = /link ..\pdcurses\pdcurses.lib
+
+TARGET = drclient
+
+OBJS = 
+
+include src\subdirw.mk
+include src\topt\subdirw.mk
+include src\iores\subdirw.mk
+include src\itemres\subdirw.mk
+include src\monsterres\subdirw.mk
+
+all: $(TARGET)
+
+$(TARGET): $(OBJS)
+	$(CC) $(OBJS) $(INCLUDES) /Fe: $(TARGET) $(LINKS)
+
+clean:
+	del$(OBJS)
