@@ -98,6 +98,8 @@ int player::sprintItem(item* it, char* buffer, int len) {
 
 		return l;
 	}
+
+	return -1;
 }
 
 void player::setName(const char* buffer) {
@@ -335,7 +337,7 @@ int player::sprintInventory(char* buffer, int len) {
 }
 
 item* player::getItem(int index) {
-	if (index < 0 || index >= inventory.size()) {
+	if (index < 0 || index >= (int)inventory.size()) {
 		return (item*)nullptr;
 	}
 

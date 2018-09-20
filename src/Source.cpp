@@ -1902,6 +1902,8 @@ int handleMouse(MEVENT ev, Socket* fd) {
 	}
 
 	multiplayerLock.unlock();
+
+	return 0;
 }
 
 int changeKeyMappings() {
