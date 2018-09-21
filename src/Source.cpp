@@ -44,6 +44,7 @@ int INP_UNEQUIP = 'u';
 int INP_DROP = 'D';
 int INP_TRAVEL = 't';
 int INP_SETTINGS = 'S';
+int INP_GLOBAL_MESSAGE = '\n';
 
 int POLL_WAIT_TIMEOUT = -1;
 unsigned int MIN_NUMBER_ARROWS = 1;
@@ -65,6 +66,7 @@ WINDOW* targetWin;
 WINDOW* borderWin;
 WINDOW* mapWin;
 WINDOW* hudWin;
+WINDOW* inpWin;
 WINDOW* messageWin;
 
 std::mutex screenLock;
@@ -145,6 +147,7 @@ int pmvwaddch(WINDOW*, point, int);
 void returnCurs();
 void printHud();
 int tgetmouse(MEVENT*);
+int globalMessage(Socket*);
 
 int main(int argc , char** argv ) {
 	int opt, port = 5000;
@@ -289,6 +292,9 @@ int main(int argc , char** argv ) {
 		else if (n == INP_SETTINGS) {
 			changeKeyMappings();
 			continue;
+		} else if (n == INP_GLOBAL_MESSAGE) {
+			globalMessage(&fd);
+			continue;
 		}
 
 		multiplayerLock.lock();
@@ -352,12 +358,15 @@ void initMap() {
 	wrefresh(mapWin);
 
 	//HUD
-
 	hudWin = newwin(1, maxx, HEIGHT+3, 0);
 	wrefresh(hudWin);
 
+	//INP
+	inpWin = newwin(1,maxx, HEIGHT+4 , 0);
+	wrefresh(inpWin);
+
 	//MESSAGE
-	messageWin = newwin(maxy - (HEIGHT+4), maxx, HEIGHT+4, 0);
+	messageWin = newwin(maxy - (HEIGHT+5), maxx, HEIGHT+5, 0);
 	wrefresh(messageWin);
 
 
@@ -1957,5 +1966,36 @@ int changeKeyMappings() {
 
 	screenLock.unlock();
 
+	return 0;
+}
+
+int globalMessage(Socket* fd) {
+	char buffer[STD_LEN];
+
+	int inp, n = 0;
+	while((inp = wgetch(inpWin)) != '\n') {
+		if (inp == 27) { //Esc
+			return -1;
+		}
+		*(buffer+n) = inp;
+
+		screenLock.lock();
+		mvwaddch(inpWin, 0, n, *(buffer+n));
+		wrefresh(inpWin);
+		screenLock.unlock();
+
+		n++;
+	}
+	*(buffer+n) = '\0';
+
+	screenLock.lock();
+	wclear(inpWin);
+	wrefresh(inpWin);
+	wrefresh(mapWin);
+	screenLock.unlock();
+
+	char msg[STD_LEN];
+	snprintf(msg, STD_LEN, "%s%c%s%c", GLOBAL_MESSAGE_OP, OP_SEP, buffer, OP_SEP);
+	fd->write(msg, strlen(msg));
 	return 0;
 }
