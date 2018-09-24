@@ -254,9 +254,13 @@ int main(int argc , char** argv ) {
 			fd.shutdownSocket();
 			fd.closeSocket();
 			STATE = -1;
+			messageLock.lock();
 			messageCond.notify_all();
+			messageLock.unlock();
 			message.join();
+			printf("Message thread closed\n");
 			reader.join();
+			printf("Reader thread closed\n");
 			refresh();
 			endwin();
 
