@@ -1452,8 +1452,12 @@ int monsterToPlayerMelee(const char* att_id, const char* vic_id, int dmg) {
 		return -1;
 	}
 
-	addMessage("You were attacked by %s for %d", att_id, dmg);
-
+	if (p == me) {
+		addMessage("You were attacked by %s for %d", att_id, dmg);
+	} else {
+		addMessage("%s was attacked by %s for %d", p->getName(), att_id, dmg);
+	}
+	
 	screenLock.lock();
 	if (REFRESH) {
 		printHud();
