@@ -201,15 +201,11 @@ int main(int argc , char** argv ) {
 
 	snprintf(MAP, 128, "%s%c%s%c", JOIN_OP, OP_SEP, handle, OP_SEP);
 
-	printf("Writing\n");
-
 	if (fd.write(MAP, strlen(MAP)) < 0) {
-		printf("Write failed\n");
+		printf("Failed to connect with server\n");
 		getchar();
 		return -1;
 	}
-
-	printf("Ready\n");
 
 	STATE = 0;
 	REFRESH = true;
