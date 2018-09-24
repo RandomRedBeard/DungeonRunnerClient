@@ -14,4 +14,4 @@ src\player.o:
 src\point.o:
 	$(CC) $(CFLAG) ..\src\point.cpp $(INCLUDES) /Fo: src\point.o
 src\key_val.o:
-	$(CC) 3(CFLAG) ..\src\key_val.cpp $(INCLUDES) /Fo: src\key_val.o
+	$(CC) $(CFLAG) ..\src\key_val.cpp $(INCLUDES) /Fo: src\key_val.o

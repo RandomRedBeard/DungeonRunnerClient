@@ -1924,23 +1924,24 @@ int handleMouse(MEVENT ev, Socket* fd) {
 int changeKeyMappings() {
 	std::vector<key_val> maps;
 
-	maps.push_back(key_val("UP", &INP_UP));
-	maps.push_back(key_val("DOWN", &INP_DOWN));
-	maps.push_back(key_val("LEFT", &INP_LEFT));
-	maps.push_back(key_val("RIGHT", &INP_RIGHT));
-	maps.push_back(key_val("QUIT", &INP_QUIT));
-	maps.push_back(key_val("PICKUP", &INP_PICKUP));
-	maps.push_back(key_val("SHOW INVENTORY", &INP_SHOW_INVENTORY));
-	maps.push_back(key_val("EQUIP", &INP_EQUIP));
-	maps.push_back(key_val("UNEQUIP", &INP_UNEQUIP));
-	maps.push_back(key_val("DROP", &INP_DROP));
-	maps.push_back(key_val("TRAVEL", &INP_TRAVEL));
+	maps.push_back(key_val((char*)"UP", &INP_UP));
+	maps.push_back(key_val((char*)"DOWN", &INP_DOWN));
+	maps.push_back(key_val((char*)"LEFT", &INP_LEFT));
+	maps.push_back(key_val((char*)"RIGHT", &INP_RIGHT));
+	maps.push_back(key_val((char*)"QUIT", &INP_QUIT));
+	maps.push_back(key_val((char*)"PICKUP", &INP_PICKUP));
+	maps.push_back(key_val((char*)"SHOW INVENTORY", &INP_SHOW_INVENTORY));
+	maps.push_back(key_val((char*)"EQUIP", &INP_EQUIP));
+	maps.push_back(key_val((char*)"UNEQUIP", &INP_UNEQUIP));
+	maps.push_back(key_val((char*)"DROP", &INP_DROP));
+	maps.push_back(key_val((char*)"TRAVEL", &INP_TRAVEL));
 
-	char buffer[STD_LEN];
+	char buffer[STD_LEN * 2];
+	memset(buffer, 0, STD_LEN * 2);
 
 	int len = 0;
 	for (int i = 0; i < maps.size(); i++) {
-		len += maps[i].sprint((buffer+len), STD_LEN);
+		len += maps[i].sprint(buffer + len, STD_LEN * 2);
 	}
 
 	screenLock.lock();
@@ -1951,17 +1952,6 @@ int changeKeyMappings() {
 
 	wmove(inventoryWin, 0, 0);
 	waddstr(inventoryWin, buffer);
-	/*wprintw(inventoryWin, "UP - %c\n", INP_UP);
-	wprintw(inventoryWin, "DOWN - %c\n", INP_DOWN);
-	wprintw(inventoryWin, "LEFT - %c\n", INP_LEFT);
-	wprintw(inventoryWin, "RIGHT - %c\n", INP_RIGHT);
-	wprintw(inventoryWin, "QUIT - %c\n", INP_QUIT);
-	wprintw(inventoryWin, "PICKUP - %c\n", INP_PICKUP);
-	wprintw(inventoryWin, "SHOW INVENTORY - %c\n", INP_SHOW_INVENTORY);
-	wprintw(inventoryWin, "EQUIP - %c\n", INP_EQUIP);
-	wprintw(inventoryWin, "UNEQUIP - %c\n", INP_UNEQUIP);
-	wprintw(inventoryWin, "DROP - %c\n" , INP_DROP);
-	wprintw(inventoryWin, "TRAVEL - %c\n", INP_TRAVEL); */
 
 	wrefresh(inventoryWin);
 
@@ -1976,8 +1966,8 @@ int changeKeyMappings() {
 		screenLock.unlock();
 
 		int inp = wgetch(inventoryWin);
-		if (inp == INP_QUIT) {
-			quit = true;
+		if (inp == 27 || inp == INP_QUIT) {
+			break;
 		} else if (inp == INP_UP && index > 0) {
 			index--;
 		} else if (inp == INP_DOWN && index < maps.size() - 1) {
@@ -1987,10 +1977,13 @@ int changeKeyMappings() {
 			mvwprintw(inventoryWin, maps.size() + 2, 0, "Enter new key or press ESC: ");
 			wrefresh(inventoryWin);
 			screenLock.unlock();
+
 			inp = wgetch(inventoryWin);
+
 			if (inp != 27 ) { //KEY_ESC
 				*(maps[index].val) = inp;
-				maps[index].sprint(buffer, STD_LEN);
+				maps[index].sprint(buffer, STD_LEN * 2);
+
 				screenLock.lock();
 				mvwaddstr(inventoryWin, index, 0, buffer);
 				wrefresh(inventoryWin);
