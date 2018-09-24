@@ -88,4 +88,10 @@ extern unsigned int STD_LEN;
 extern unsigned int MIN_NUMBER_ARROWS;
 extern unsigned int MAX_NUMBER_ARROWS;
 
+//ATTR OPTS
+#define STRENGTH "STR"
+#define DEXTERITY "DEX"
+#define INTELLIGENCE "INT"
+#define VITALITY "VIT"
+
 #endif /* GLOBALS_H_ */
