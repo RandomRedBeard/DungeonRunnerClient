@@ -1589,13 +1589,14 @@ int playerKilledMonster(Socket* fd, const char* att_id, const char* vic_id) {
 		pmvwaddch(mapWin, it->getPt(), it->getIcon());
 	}
 	else {
-		pmvwaddch(mapWin, m->getPt(), ' ');
+		pmvwaddch(mapWin, m->getPt(), *(MAP + m->getPt().index(HEIGHT, WIDTH)));
 	}
 
 	if (REFRESH) {
 		if (p == me){
 			printHud();
 		}
+		returnCurs();
 		wrefresh(mapWin);
 	}
 
