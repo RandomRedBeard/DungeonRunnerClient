@@ -86,6 +86,8 @@ char* MAP;
 
 player* me;
 
+monster* target;
+
 void initMap();
 
 void addMessage(const char* , ...);
@@ -147,6 +149,7 @@ int changeKeyMappings();
 int pmvwaddch(WINDOW*, point, int);
 void returnCurs();
 void printHud();
+void printTarget();
 int tgetmouse(MEVENT*);
 int globalMessage(Socket*);
 
@@ -199,6 +202,8 @@ int main(int argc , char** argv ) {
 	me = new player();
 	me->setName(handle);
 	me->setPt(point(0, 0));
+
+	target = nullptr;
 
 	snprintf(MAP, 128, "%s%c%s%c", JOIN_OP, OP_SEP, handle, OP_SEP);
 
@@ -339,6 +344,31 @@ void printHud() {
 	wrefresh(mapWin);
 }
 
+void printTarget() {
+	wmove(targetWin, 0, 0);
+	wdeleteln(targetWin);
+	wrefresh(targetWin);
+	if (!target) {
+		return;
+	}
+
+	mvwprintw(targetWin, 0, 0, "%s ", target->getName());
+	double ratio = ((double)target->getCurHp() / (double)target->getMaxHp());
+	ratio *= 10;
+	for (int i = 0; i < 10; i++) {
+		if (i < ratio) {
+			waddch(targetWin, '#');
+		}
+		else {
+			waddch(targetWin, '-');
+		}
+	}
+
+	wprintw(targetWin, " %d(%d)", target->getCurHp(), target->getMaxHp());
+	wrefresh(targetWin);
+	returnCurs();
+}
+
 void initMap() {
 
 	int maxx = getmaxx(stdscr);
@@ -372,8 +402,6 @@ void initMap() {
 	//MESSAGE
 	messageWin = newwin(maxy - (HEIGHT+5), maxx, HEIGHT+5, 0);
 	wrefresh(messageWin);
-
-
 }
 
 void addMessage(const char* format, ...) {
@@ -533,8 +561,6 @@ int acceptTravel(Socket* fd) {
 	fd->read(height); //height
 	fd->read(width);//width
 
-	addMessage("%s %s", height, width);
-
 	multiplayerLock.lock();
 
 	me->setPt(point(pt));
@@ -552,18 +578,6 @@ int acceptTravel(Socket* fd) {
 		items.erase(items.begin());
 		delete(it);
 	}
-
-	/*for ( monster* m : monsters ) {
-		delete m;
-	}
-
-	monsters.clear();
-
-	for ( item* it : items ) {
-		delete it;
-	}
-
-	items.clear();*/
 
 	player* p;
 	while (players.size() != 0) {
@@ -651,8 +665,6 @@ int newWeapon(Socket* fd) {
 	w->setMaxDmg(d.getX());
 	w->setMinDmg(d.getY());
 
-	addMessage("%s has dropped at %d:%d", name, w->getPt().getX(), w->getPt().getY());
-
 	multiplayerLock.lock();
 	items.push_back(w);
 
@@ -698,8 +710,6 @@ int newArmor(Socket* fd) {
 	a->setLvl(strtol(lvl, nullptr, 0));
 	a->setPt(point(pt));
 	a->setAc(strtol(ac, nullptr, 0));
-
-	addMessage("%s has dropped at %d %d", name, a->getPt().getX(), a->getPt().getY());
 	
 	multiplayerLock.lock();
 	items.push_back(a);
@@ -757,8 +767,6 @@ int newBow(Socket* fd) {
 	b->setRangeMinDmg(rd.getY());
 	b->setPt(point(pt));
 
-	addMessage("%s has dropped at %d %d", name, b->getPt().getX(), b->getPt().getY());
-
 	multiplayerLock.lock();
 	items.push_back(b);
 
@@ -813,8 +821,6 @@ int newArrow(Socket* fd) {
 	a->setMaxDmg(d.getX());
 	a->setMinDmg(d.getY());
 
-	addMessage("%s dropped at %d %d", name, a->getPt().getX(), a->getPt().getY());
-
 	multiplayerLock.lock();
 	items.push_back(a);
 
@@ -866,8 +872,6 @@ int newMonster(Socket* fd) {
 	m->setMaxHp(strtol(hp, nullptr, 0));
 	m->setCurHp(strtol(hp, nullptr, 0));
 	m->setAc(strtol(ac, nullptr, 0));
-
-	addMessage("%s %s %d is at %d %d", m->getId(), m->getName(),strlen(m->getId()), m->getPt().getX(), m->getPt().getY());
 
 	multiplayerLock.lock();
 	monsters.push_back(m);
@@ -1057,9 +1061,6 @@ int pickup(Socket* fd) {
 
 	p->pickUp(it);
 	multiplayerLock.unlock();
-
-	addMessage("%s picked up %s", p->getName(), it->getName());
-
 
 	return 0;
 }
@@ -1437,9 +1438,17 @@ int playerToMonsterMelee( const char* att_id, const char* vic_id, int dmg) {
 		return -1;
 	}
 
-	addMessage("You attack %s for %d", vic_id, dmg);
-
+	if (p == me) {
+		target = m;
+	}
 	m->takeDamage(dmg);
+
+	if (target == m) {
+		screenLock.lock();
+		printTarget();
+		wrefresh(mapWin);
+		screenLock.unlock();
+	}
 
 	multiplayerLock.unlock();
 
@@ -1454,12 +1463,6 @@ int monsterToPlayerMelee(const char* att_id, const char* vic_id, int dmg) {
 	if (!p || !m) {
 		multiplayerLock.unlock();
 		return -1;
-	}
-
-	if (p == me) {
-		addMessage("You were attacked by %s for %d", att_id, dmg);
-	} else {
-		addMessage("%s was attacked by %s for %d", p->getName(), att_id, dmg);
 	}
 	
 	screenLock.lock();
@@ -1520,7 +1523,15 @@ int playerToMonsterRange(const char* p_name, const char* vic_id, int dmg) {
 	m->takeDamage(dmg);
 
 	if (p == me) {
-		addMessage("You hit %s for %d", vic_id, dmg);
+		target = m;
+	}
+
+	if (m == target) {
+		screenLock.lock();
+		printTarget();
+		returnCurs();
+		wrefresh(mapWin);
+		screenLock.unlock();
 	}
 
 	multiplayerLock.unlock();
@@ -1579,6 +1590,9 @@ int playerKilledMonster(Socket* fd, const char* att_id, const char* vic_id) {
 	if (p == me) {
 		addMessage("You have killed %s", vic_id);
 	}
+	else {
+		addMessage("%s killed %s", p->getName(), vic_id);
+	}
 
 	for (unsigned int i = 0; i < monsters.size(); i++) {
 		if (monsters[i] == m) {
@@ -1600,6 +1614,13 @@ int playerKilledMonster(Socket* fd, const char* att_id, const char* vic_id) {
 		if (p == me){
 			printHud();
 		}
+		returnCurs();
+		wrefresh(mapWin);
+	}
+
+	if (m == target) {
+		target = nullptr;
+		printTarget();
 		returnCurs();
 		wrefresh(mapWin);
 	}
