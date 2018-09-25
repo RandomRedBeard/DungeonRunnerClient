@@ -264,7 +264,7 @@ int main(int argc , char** argv ) {
 			refresh();
 			endwin();
 
-			printf("Press any key to exit...");
+			printf("Press any key to exit...\n");
 			getchar();
 			return 0;
 		}else if (n == INP_PICKUP) {
@@ -332,6 +332,8 @@ void returnCurs() {
 }
 
 void printHud() {
+	wmove(hudWin, 0, 0);
+	wdeleteln(hudWin);
 	mvwprintw(hudWin, 0, 0, "%s %d(%d) lvl(%d) AC(%d) XP=%d/%d", me->getName(), me->getCurHp(), me->getMaxHp(), me->getLvl(), me->getAc(), me->getCurXp(), me->getNextXp());
 	wrefresh(hudWin);
 	wrefresh(mapWin);
