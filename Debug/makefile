@@ -1,6 +1,6 @@
 CC = gcc
 CFLAG = -Wall -c
-LFLAG = -lstdc++ -std=c++17 -lpthread -lm -lcurses
+LFLAG = -lstdc++ -std=c++14 -lpthread -lm -lcurses
 TARGET = drclient
 
 OBJS = 
